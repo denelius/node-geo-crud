@@ -1,0 +1,154 @@
+extends layout.pug
+block content
+    #map
+  
+    button(type='button' id='one' class='sbtn' onclick="saveFunction()") Save
+    div(class='dropdown')
+        button(type='button' class='dropbtn' onclick="dropFunction()") OTU search
+        div(id='myDropdown' class='dropdown-content')
+            each layer, i in jmap
+                a(href='#' + layer.name.substr(2) onclick="editFunction('" + layer.name + "')") #{layer.name.substr(2)}
+
+    script(type='text/javascript').
+
+        var map = L.map('map', {editable: true}).setView([#{lat},#{lng}], 14);
+        L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        //var a11605 = L.polyline([
+         //   [-33.44379, -70.65775],
+        //    [-33.04576, -71.61748],
+        //]).addTo(map).bindPopup("pline: 11605");
+                
+        $.getJSON('maplayers',function(result){
+            $.each(result, function(i, mlayer){
+                //alert(mlayer.name);
+                $.getJSON('mapjson/' + mlayer.name, function(data) { addLayer(data, mlayer.name ) });
+            });
+        });
+
+        function rubble(x) {
+            alert(x);
+        }
+
+        var layers = {};
+
+        function addLayer(layer, name) {
+            var leaf_layer;
+            if (layer.type == "MultiPoint") {
+                leaf_layer = L.geoJson(layer, { pointToLayer: function (feature, latlng) {return L.circleMarker(latlng, layer.style); }})
+                leaf_layer.bindPopup(layer.type);
+            } else if (layer.type == "MultiLineString") {
+                leaf_layer = L.geoJson(layer, {style: layer.style });
+                leaf_layer.bindPopup(layer.type);
+            } 
+            else if (layer.type == "Feature") {
+                leaf_layer = L.polyline(layer.geometry.coordinates, {style: layer.style});
+                leaf_layer.bindPopup('<p>direction: ' + layer.properties.direction + '</br>sink: ' + layer.name + '</p>');
+            } 
+
+            //var pline = L.polyline(dd, {color: 'red'}).addTo(map);
+            //pline.enableEdit(); 
+
+            else  {
+                leaf_layer = L.geoJson(layer, {
+                    style: function(feature) {
+                        switch (feature.properties.style) {
+                        case 'Orange': return {color: "#ff0000"};
+                        case 'Blue': return {color: "#0000ff"};
+                    }
+                    },
+                    onEachFeature: function (feature, layer) {
+                         layer.bindPopup(feature.properties.name);
+                     }
+                 });
+            }
+            layers[name] = leaf_layer;
+            leaf_layer.addTo(map);
+            
+            $('#' + name).click(function(e) {
+                if (map.hasLayer(leaf_layer)) {
+                    map.removeLayer(leaf_layer);
+                } else {
+                    map.addLayer(leaf_layer);
+                    //leaf_layer.enableEdit();
+                }
+            });   
+        }
+
+        var myArray = {}
+
+        map.on('editable:vertex:ctrlclick editable:vertex:metakeyclick', function (e) {
+            e.vertex.continue();
+        });
+
+        var popup = L.popup();
+
+        function getRandomColor() {
+          var letters = '0123456789ABCDEF';
+          var color = '#';
+          for (var i = 0; i < 6; i++) {
+            color += letters[Math.floor(Math.random() * 16)];
+          }
+          return color;
+        }
+
+        colcount = 0
+        map.on('editable:editing', function (e) {
+            if (colcount == 0) {
+                e.layer.setStyle({color: getRandomColor()});
+            }
+            colcount ++;
+            //myArray.a11605 = JSON.stringify(a11605.toGeoJSON().geometry.coordinates);
+            //userPolygon = feature.toGeoJSON();
+        });
+
+        //{"type":"Feature","properties":{},"geometry":{"type":"LineString","coordinates":[[-70.65775,-33.44379],[-71.61748,-33.04576]]}}
+
+        function saveFunction() {
+        alert("ggg");
+            //alert("not currently active but this will save either one or all edited features");
+            //alert(a11605.getLatLngs());
+            //alert(JSON.stringify(a11605.))
+            //for (var key in myArray) {
+              //alert("key " + key + " has value " + myArray[key]);
+            //}
+
+            //alert(JSON.stringify(a11605.toGeoJSON().geometry.coordinates))
+            //myArray.a11605 = JSON.stringify(a11605.toGeoJSON().geometry.coordinates);
+         
+        }
+
+        var lastlayer = "";
+        function editFunction(x) {
+            //alert(x);
+            colcount = 0;
+            if (lastlayer !== "") {
+                layers[lastlayer].disableEdit();
+            }
+            layers[x].enableEdit();
+            lastlayer = x;
+        }
+
+
+        /* When the user clicks on the button, 
+        toggle between hiding and showing the dropdown content */
+        function dropFunction() {
+            document.getElementById("myDropdown").classList.toggle("show");
+        }
+
+        // Close the dropdown if the user clicks outside of it
+        window.onclick = function(event) {
+          if (!event.target.matches('.dropbtn')) {
+
+            var dropdowns = document.getElementsByClassName("dropdown-content");
+            var i;
+            for (i = 0; i < dropdowns.length; i++) {
+              var openDropdown = dropdowns[i];
+              if (openDropdown.classList.contains('show')) {
+                openDropdown.classList.remove('show');
+              }
+            }
+          }
+        }

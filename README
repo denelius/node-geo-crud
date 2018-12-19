@@ -1,0 +1,23 @@
+https://codeburst.io/writing-a-crud-app-with-node-js-and-mongodb-e0827cbbdafb
+
+use postman
+mongoose.connect("mongodb://cv:cv_b00gingrip@ds147033.mlab.com:47033/cristian", { useNewUrlParser: true });
+line_collection
+
+works for update
+{
+     "geometry": {
+        "coordinates": [
+            [
+                -77.591079,
+                -33.739105
+            ],
+            [
+                -73.2404,
+                -39.815547
+            ]
+        ]
+    }
+}
+
+a(href='#' onclick="editFunction(" + layer.name + ")") #{layer.name}
